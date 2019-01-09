@@ -1,5 +1,5 @@
-# Build a Private Blockchain Notary Service
-# RESTful Web API Project with Hapi.js Framework.
+# Build a Private Blockchain Notary Service using
+# RESTful Web API with Hapi.js Framework.
 
 In this project, I built a Star Registry Service that allows users to 
 claim ownership of their favorite star in the night sky.
