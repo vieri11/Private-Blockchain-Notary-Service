@@ -121,6 +121,7 @@ class BlockController {
 		if(walletAddress in timeoutRequests) {
 			console.log(`Removing ${walletAddress} from mempool!`);
 				
+			clearTimeout(timeoutRequests[walletAddress]);
 			delete timeoutRequests[walletAddress];
 			delete mempool[walletAddress];
 		}

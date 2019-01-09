@@ -157,7 +157,7 @@ class Blockchain {
            .on('close', function () {
 			   
 			   // add storyDecoded if not Genesis block only
-			   if(block.height != 0) {
+			   if(block && block.height != 0) {
 			      block.body.star.storyDecoded = hex2ascii(block.body.star.story);
 			   }
 			   
