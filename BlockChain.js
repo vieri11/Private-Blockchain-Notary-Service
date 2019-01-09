@@ -5,6 +5,7 @@
 const SHA256 = require('crypto-js/sha256');
 const LevelSandbox = require('./levelSandbox.js');
 const Block = require('./Block.js');
+const hex2ascii = require('hex2ascii');
 
 class Blockchain {
 
@@ -13,8 +14,8 @@ class Blockchain {
       	this.generateGenesisBlock();
     }
   
-  	  // Generate genesis block when appplicable
-      generateGenesisBlock(){
+  	// Generate genesis block when appplicable
+    generateGenesisBlock(){
         this.getBlockHeight().then((result)=>{
             if(result<0){
               this.addBlock(new Block.Block("First block in the chain - Genesis block")).then((result)=>{
@@ -59,6 +60,9 @@ class Blockchain {
         		if(!addedBlock) {
               		reject("Error Adding data");
             	}else {
+					addedBlock = JSON.parse(addedBlock);
+					addedBlock.body.star.storyDecoded = hex2ascii(addedBlock.body.star.story);
+					
               		resolve(addedBlock);
             	}
               }).catch((err) => { console.log(err); });
@@ -87,12 +91,19 @@ class Blockchain {
     // Get Block By Height
     getBlock(blockHeight){
       return new Promise((resolve, reject) => {
-		  console.log(blockHeight);
         this.db.getLevelDBData(blockHeight).then((block) => {
           if(!block) {
               reject("Error with previous data");
           }else {
-              resolve(JSON.parse(block));
+			  
+			   block = JSON.parse(block);
+			   
+			   // add storyDecoded if not Genesis block only
+			   if(block.height != 0) {
+			      block.body.star.storyDecoded = hex2ascii(block.body.star.story);
+			   }
+			   
+              resolve(block);
           }
       	}).catch((err) => { console.log(err); });
       });
@@ -122,7 +133,66 @@ class Blockchain {
 		}).catch((err) => { console.log(err); }); 
       });
     }
-
+  
+	getBlockByHash(hash) {
+	   console.log("Retrieving from level DB using hash: " + hash);
+	   
+       let self = this;
+       let block = null;
+	   let currentBlock = {};
+	   let currentHash = "";
+	   
+       return new Promise(function(resolve, reject){
+           self.db.db.createReadStream()
+           .on('data', function (data) {
+			   currentBlock = JSON.parse(data.value);
+               currentHash = currentBlock.hash;
+               if(currentHash == hash){
+                   block = currentBlock;
+               }
+           })
+           .on('error', function (err) {
+               reject(err)
+           })
+           .on('close', function () {
+			   
+			   // add storyDecoded if not Genesis block only
+			   if(block.height != 0) {
+			      block.body.star.storyDecoded = hex2ascii(block.body.star.story);
+			   }
+			   
+               resolve(block);
+           });
+       }).catch((err) => { console.log(err);reject(errorLog);});
+    }
+	
+	getBlockByWalletAddress(address) {
+		console.log("Retrieving from level DB using address: " + address);
+	   
+       let self = this;
+       let blocks = [];
+	   let currentBlock = {};
+	   let currentAddress = "";
+	   
+       return new Promise(function(resolve, reject){
+           self.db.db.createReadStream()
+           .on('data', function (data) {
+			   currentBlock = JSON.parse(data.value);
+               currentAddress = currentBlock.body.address;
+               if(currentAddress == address){
+			      currentBlock.body.star.storyDecoded = hex2ascii(currentBlock.body.star.story);
+                  blocks.push(currentBlock);
+               }
+           })
+           .on('error', function (err) {
+               reject(err)
+           })
+           .on('close', function () {	   
+               resolve(blocks);
+           });
+       }).catch((err) => { console.log(err);reject(errorLog);});
+	}
+	
 	 // Validate Blockchain
      validateChain(){
         let errorLog = [];
