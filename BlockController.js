@@ -73,6 +73,10 @@ class BlockController {
 				
 				let message = walletAddress + ":" + timeStamped + ":starRegistry";
 				
+				// Calculate time left
+				let timeElapse = (new Date().getTime().toString().slice(0,-3)) - timeStamped;
+			    let timeLeft = (TimeoutRequestsWindowTime/1000) - timeElapse;
+				
 				if(!payload) {
 					throw Boom.badData('Your data is bad and you should feel bad - No payload content!');
 				}
@@ -85,6 +89,12 @@ class BlockController {
 				if(walletAddress in mempool) {
 					console.log("Wallet address already in mempool. Returning previous request");
 					
+					timeStamped = mempool[walletAddress].requestTimeStamp;
+					
+					timeElapse = (new Date().getTime().toString().slice(0,-3)) - timeStamped;
+			        timeLeft = (TimeoutRequestsWindowTime/1000) - timeElapse;
+				
+					mempool[walletAddress].validationWindow = timeLeft;
 					return(mempool[walletAddress]);
 				}
 				
@@ -94,10 +104,6 @@ class BlockController {
 					
 					return(mempoolValid[walletAddress]);
 				}
-				
-				// Calculate time left
-				let timeElapse = (new Date().getTime().toString().slice(0,-3)) - timeStamped;
-			    let timeLeft = (TimeoutRequestsWindowTime/1000) - timeElapse;
 				
 				// store request Object
 				let requestObject = JSON.parse(`{"walletAddress":"${walletAddress}", 
@@ -236,7 +242,7 @@ class BlockController {
 					throw Boom.badData('Your data is bad and you should feel bad - No payload content!');
 				}
 				
-				if(!walletAddress || !starCoordinates) {
+				if(!walletAddress || !starCoordinates || !starCoordinates.ra || !starCoordinates.dec) {
 					throw Boom.badData('Your data is bad and you should feel bad - Bad body content!');
 				}
 				
